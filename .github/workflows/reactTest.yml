@@ -1,22 +1,56 @@
 name: Workflow reactTest
-on: push
+on:
+  push:
+  pull_request:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
-    steps:
-      - name: install npm
-	run: npm install
 
-      - name: Étape de build
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: install dependences
         run: npm run build
 
-      - name: lancer le projet
-        run: npm start
+      - name: build
+        run: npm run build
 
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Étape de test
-        run: curl http://localhost:3000
+      - name: start app
+        run: |
+          npm start &
+          echo $! > app.pid
+          echo "app started with PID $(cat app.pid)"
+
+      - name: wait for server to be ready
+        run: |
+          npx --yes wait-on http://localhost:3000
+
+      - name: test with curl
+        run: |
+          curl -I http://localhost:3000 | grep "200"
+
+      - name: show logs if failsn
+        if: failure()
+        run: |
+          kill $(cat app.pid) || true
+
+#      - name: Étape de build
+#      run: npm run build
+#
+#    - name: lancer le projet
+#      run: npm start
+#
+#    test:
+#      needs: build
+#      runs-on: ubuntu-latest
+#      steps:
+#        - name: Étape de test
+#          run: curl http://localhost:3000
