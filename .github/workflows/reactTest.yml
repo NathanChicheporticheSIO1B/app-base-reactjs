@@ -1,0 +1,22 @@
+name: Workflow reactTest
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install npm
+	run: npm install
+
+      - name: Étape de build
+        run: npm run build
+
+      - name: lancer le projet
+        run: npm start
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Étape de test
+        run: curl http://localhost:3000
